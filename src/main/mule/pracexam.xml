@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:db="http://www.mulesoft.org/schema/mule/db"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="85d4e0b6-afe8-4adc-b209-e2c8a3ac6bce" >
+		<http:listener-connection host="0.0.0.0" port="8081" />
+	</http:listener-config>
+	<db:config name="Database_Config" doc:name="Database Config" doc:id="ce857af7-8964-496f-a480-5a80cb3413c9" >
+		<db:my-sql-connection host="sql6.freemysqlhosting.net" port="3306" user="sql6456062" password="dd3TK5VnpY" database="sql6456062" />
+	</db:config>
+	<flow name="listener" doc:id="818cd0d6-3522-4261-b3bf-a318ef34c217" >
+		<http:listener doc:name="listener" doc:id="22e082c3-43f4-4363-a8f8-f373f1e5e116" config-ref="HTTP_Listener_config" path="/get" />
+		<db:select doc:name="Select" doc:id="9d0d5e7f-5b5c-4767-a7ca-3c5e10937621" config-ref="Database_Config">
+			<db:sql ><![CDATA[select * from agf_exam]]></db:sql>
+		</db:select>
+		<ee:transform doc:name="converting datatype" doc:id="02df41d4-2d66-4e2c-8dd4-ecb731935531" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<logger level="INFO" doc:name="" doc:id="82c12f32-d2ab-4846-bf22-31c010c821b3" message='"sucess:"' />
+		<error-handler >
+			<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="ac8c925f-0680-42df-afd7-4c17a5c089f2" >
+				<logger level="INFO" doc:name="Logger" doc:id="5001020b-5d58-4d81-b854-0e23bdc955a9" message='"error"'/>
+			</on-error-continue>
+		</error-handler>
+	</flow>
+	<flow name="Listener" doc:id="1d240823-3391-40d8-b17d-87edefe66260" >
+		<http:listener doc:name="Listener" doc:id="6fc896e4-ebd1-4e86-b480-3872c8c0c1e7" config-ref="HTTP_Listener_config" path="/post" />
+		<db:insert doc:name="Inserting" doc:id="3c92dd41-51e2-4482-b4e1-17d89ff2270b" config-ref="Database_Config" >
+			<db:sql ><![CDATA[insert into agf_exam (E_ID, E_NAME , E_SALARY) VALUES (:E_ID, :E_NAME, :E_SALARY);]]></db:sql>
+			<db:input-parameters ><![CDATA[#[{"E_ID": payload.E_ID, "E_NAME": payload.E_NAME, "E_SALARY": payload.E_SALARY}]]]></db:input-parameters>
+		</db:insert>
+		<ee:transform doc:name="Transform Message" doc:id="575ec13a-0cf0-47c3-9035-b716f8e36930" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<error-handler >
+			<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="f63f23fa-fd35-4c3c-b924-4c9d766d5b63" >
+				<logger level="INFO" doc:name="Logger" doc:id="9ddcacac-e91d-402a-a117-ff75d16e00df" message='"error"'/>
+			</on-error-continue>
+		</error-handler>
+	</flow>
+</mule>
